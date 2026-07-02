@@ -10,8 +10,9 @@ pipeline {
     }
 
     environment {
-        AWS_REGION      = 'ap-south-1'
-        TF_VAR_key_name = credentials('ec2-key-pair-name')   // Jenkins secret text credential
+        AWS_REGION         = 'ap-south-1'
+        AWS_ACCESS_KEY_ID     = credentials('aws-acess-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
     }
 
     options {
@@ -25,35 +26,25 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                credentialsId: 'git-credentials',        // Jenkins Git credential ID (if private repo)
-                url: 'https://github.com/<your-username>/jenkins-terraform.git'  // replace with your repo URL
+                credentialsId: 'git-credentials',
+                url: 'https://github.com/Raghukongala/blu-jenks-terrfrom.git'
             }
         }
 
         stage('Terraform Init') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-credentials'          // Jenkins AWS credential ID
-                ]]) {
-                    sh 'terraform init -input=false'
-                }
+                sh 'terraform init -input=false'
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-credentials'
-                ]]) {
-                    sh '''
-                        terraform plan \
-                          -var-file=terraform.tfvars \
-                          -out=tfplan \
-                          -input=false
-                    '''
-                }
+                sh '''
+                    terraform plan \
+                      -var-file=terraform.tfvars \
+                      -out=tfplan \
+                      -input=false
+                '''
             }
         }
 
@@ -71,12 +62,7 @@ pipeline {
                 expression { params.ACTION == 'apply' }
             }
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-credentials'
-                ]]) {
-                    sh 'terraform apply -input=false -auto-approve tfplan'
-                }
+                sh 'terraform apply -input=false -auto-approve tfplan'
             }
         }
 
@@ -86,17 +72,12 @@ pipeline {
             }
             steps {
                 input message: 'Are you sure you want to DESTROY all resources?', ok: 'Destroy'
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-credentials'
-                ]]) {
-                    sh '''
-                        terraform destroy \
-                          -var-file=terraform.tfvars \
-                          -input=false \
-                          -auto-approve
-                    '''
-                }
+                sh '''
+                    terraform destroy \
+                      -var-file=terraform.tfvars \
+                      -input=false \
+                      -auto-approve
+                '''
             }
         }
     }
