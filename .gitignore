@@ -1,0 +1,16 @@
+# Terraform state files
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+tfplan
+
+# Credentials / secrets
+*.pem
+*.key
+override.tf
+override.tf.json
+
+# OS
+.DS_Store
+Thumbs.db
